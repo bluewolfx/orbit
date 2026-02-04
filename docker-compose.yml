@@ -1,0 +1,74 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: orbit-postgres
+    environment:
+      POSTGRES_DB: orbit
+      POSTGRES_USER: orbit
+      POSTGRES_PASSWORD: orbit
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U orbit"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: orbit-redis
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  manager:
+    build:
+      context: .
+      dockerfile: Dockerfile.manager
+    container_name: orbit-manager
+    environment:
+      DATABASE_URL: postgres://orbit:orbit@postgres:5432/orbit?sslmode=disable
+      REDIS_URL: redis:6379
+      MANAGER_GRPC_PORT: "50051"
+      MANAGER_HTTP_PORT: "8080"
+    ports:
+      - "8080:8080"
+      - "50051:50051"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  worker1:
+    build:
+      context: .
+      dockerfile: Dockerfile.worker
+    container_name: orbit-worker1
+    environment:
+      MANAGER_ADDR: manager:50051
+      WORKER_ID: worker-1
+      WORKER_POOL_SIZE: "5"
+    depends_on:
+      - manager
+
+  worker2:
+    build:
+      context: .
+      dockerfile: Dockerfile.worker
+    container_name: orbit-worker2
+    environment:
+      MANAGER_ADDR: manager:50051
+      WORKER_ID: worker-2
+      WORKER_POOL_SIZE: "5"
+    depends_on:
+      - manager
+
+volumes:
+  postgres-data:
