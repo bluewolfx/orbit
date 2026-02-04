@@ -34,3 +34,7 @@ go.work.sum
 # Build artifacts
 bin/
 *.pb.go
+
+# Test output
+*.test
+test_output/
