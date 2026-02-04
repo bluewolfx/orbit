@@ -67,7 +67,9 @@ func (w *Worker) Start(ctx context.Context) error {
 func (w *Worker) Stop() {
 	log.Printf("Stopping worker %s", w.id)
 	close(w.stopChan)
-	w.heartbeatTicker.Stop()
+	if w.heartbeatTicker != nil {
+		w.heartbeatTicker.Stop()
+	}
 	w.wg.Wait()
 	if w.conn != nil {
 		w.conn.Close()
