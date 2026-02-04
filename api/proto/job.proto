@@ -1,0 +1,66 @@
+syntax = "proto3";
+
+package job;
+
+option go_package = "github.com/bluewolfx/Orbit/api/proto";
+
+// Job service for manager-worker communication
+service JobService {
+  // Worker requests a job to execute
+  rpc RequestJob(JobRequest) returns (Job);
+  
+  // Worker reports job completion
+  rpc ReportJobStatus(JobStatusReport) returns (JobStatusResponse);
+  
+  // Worker registers with manager
+  rpc RegisterWorker(WorkerInfo) returns (RegistrationResponse);
+  
+  // Worker sends heartbeat
+  rpc Heartbeat(WorkerInfo) returns (HeartbeatResponse);
+}
+
+message JobRequest {
+  string worker_id = 1;
+}
+
+message Job {
+  string id = 1;
+  string type = 2;
+  string payload = 3;
+  int64 created_at = 4;
+}
+
+message JobStatusReport {
+  string job_id = 1;
+  string worker_id = 2;
+  JobStatus status = 3;
+  string result = 4;
+  string error = 5;
+}
+
+message JobStatusResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+message WorkerInfo {
+  string worker_id = 1;
+  string address = 2;
+  int32 capacity = 3;
+}
+
+message RegistrationResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+message HeartbeatResponse {
+  bool success = 1;
+}
+
+enum JobStatus {
+  PENDING = 0;
+  RUNNING = 1;
+  COMPLETED = 2;
+  FAILED = 3;
+}
